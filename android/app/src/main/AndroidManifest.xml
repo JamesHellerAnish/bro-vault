@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      Required for push on Android 13 (API 33) and above. The @capacitor/push-notifications
+      plugin merges in its own MessagingService but NOT this permission - verified by reading
+      the plugin's AndroidManifest.xml, which declares only the service. Without this line
+      PushNotifications.requestPermissions() can never return "granted" on a modern device,
+      and it fails silently rather than with a useful error.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+      DELIBERATELY ABSENT: android.permission.CAMERA.
+
+      The Docs tab (Phase 4) uses a plain <input type="file">, which Capacitor's WebChromeClient
+      serves with the system file/gallery picker - no CAMERA permission needed. Declaring it
+      anyway would show users a camera permission on install and invite a Play Store data-safety
+      question, for a capability nothing currently uses.
+
+      When "photograph this document" becomes a native flow, add @capacitor/camera (which merges
+      its own permissions) rather than adding this line by hand.
+    -->
+</manifest>
