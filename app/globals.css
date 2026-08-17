@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "./broker-theme.css";
+
+/* The theme owns colour, radius and shadow. Only genuinely global resets belong here. */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--p-bg);
+    color: var(--p-text);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Inputs below 16px make iOS Safari zoom on focus, which on a lead form reads as the
+     page jumping. Cheapest possible fix, applied once. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* The app is wrapped in a WebView (Phase 4). Text selection on chrome elements looks
+     like a bug there, so it is off everywhere except actual content. */
+  button,
+  nav,
+  header {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

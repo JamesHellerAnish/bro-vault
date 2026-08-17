@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MyInsuranceBro</string>
+    <string name="title_activity_main">MyInsuranceBro</string>
+    <string name="package_name">com.myinsurancebro.app</string>
+    <string name="custom_url_scheme">com.myinsurancebro.app</string>
+</resources>
