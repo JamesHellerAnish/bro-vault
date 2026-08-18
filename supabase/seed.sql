@@ -20,18 +20,30 @@ insert into public.profiles (id, full_name, email, phone, whatsapp_number, role,
    '+919000000003', '+919000000003', 'broker', true)
 on conflict (phone) do nothing;
 
+-- The four token columns below are set to '' deliberately, and omitting them is not
+-- harmless. They are declared without a default, so a direct insert leaves them NULL --
+-- but GoTrue scans them into non-nullable Go strings, so the first /otp request for a
+-- seeded user fails with a 500 and the useless message "Database error finding user".
+-- The seed looks fine, the rows look fine, and login is impossible.
+--
+-- Real users never hit this because GoTrue writes '' itself; only this local-only shortcut
+-- of inserting into auth.users directly can produce the NULLs. Sibling columns
+-- (phone_change, reauthentication_token, ...) do carry defaults, which is what makes the
+-- omission easy to miss -- half the columns fix themselves.
 insert into auth.users (instance_id, id, aud, role, phone, phone_confirmed_at,
-                        created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+                        created_at, updated_at, raw_app_meta_data, raw_user_meta_data,
+                        confirmation_token, recovery_token, email_change,
+                        email_change_token_new)
 values
   ('00000000-0000-0000-0000-000000000000', 'aaaaaaaa-0000-0000-0000-000000000001',
    'authenticated', 'authenticated', '919000000001', now(), now(), now(),
-   '{"provider":"phone","providers":["phone"]}'::jsonb, '{}'::jsonb),
+   '{"provider":"phone","providers":["phone"]}'::jsonb, '{}'::jsonb, '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'aaaaaaaa-0000-0000-0000-000000000002',
    'authenticated', 'authenticated', '919000000002', now(), now(), now(),
-   '{"provider":"phone","providers":["phone"]}'::jsonb, '{}'::jsonb),
+   '{"provider":"phone","providers":["phone"]}'::jsonb, '{}'::jsonb, '', '', '', ''),
   ('00000000-0000-0000-0000-000000000000', 'aaaaaaaa-0000-0000-0000-000000000003',
    'authenticated', 'authenticated', '919000000003', now(), now(), now(),
-   '{"provider":"phone","providers":["phone"]}'::jsonb, '{}'::jsonb)
+   '{"provider":"phone","providers":["phone"]}'::jsonb, '{}'::jsonb, '', '', '', '')
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------

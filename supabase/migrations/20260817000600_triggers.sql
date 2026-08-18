@@ -52,7 +52,20 @@ security definer
 set search_path = ''
 as $$
 begin
-  if (select app_private.is_admin()) then
+  -- This guard constrains APP USERS. A null auth.uid() means there is no JWT on the
+  -- connection, which no client path can produce: `anon` holds no UPDATE grant on
+  -- public.profiles (20260817000500 grants only to `authenticated`), so a null uid arises
+  -- only from system paths -- the on_auth_user_created linking trigger below, the
+  -- `on delete set null` FK action on auth_uid, and CLI seeding.
+  --
+  -- Without this exemption the guard blocks link_auth_user_to_profile: that trigger runs
+  -- `update public.profiles set auth_uid = ...` with no JWT, falls past the is_admin()
+  -- check, and trips the auth_uid clause below. That breaks the FIRST OTP login of every
+  -- broker, not merely seeding.
+  --
+  -- Future work: a SECURITY DEFINER function that updates public.profiles also bypasses
+  -- this guard, so any such function must re-check the guarded columns itself.
+  if (select auth.uid()) is null or (select app_private.is_admin()) then
     return new;
   end if;
 
@@ -95,7 +108,12 @@ security definer
 set search_path = ''
 as $$
 begin
-  if (select app_private.is_admin()) then
+  -- Same rule as guard_profile_columns: this constrains APP USERS, and a null auth.uid()
+  -- cannot originate from a client (`anon` holds no UPDATE grant on public.leads). No
+  -- system path changes a guarded column today -- stamp_first_contact writes
+  -- first_contacted_at, and the 20260817001000 backfill writes assigned_at -- so this is
+  -- consistency with the profile guard rather than a fix for a live failure.
+  if (select auth.uid()) is null or (select app_private.is_admin()) then
     return new;
   end if;
 

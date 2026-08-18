@@ -260,9 +260,23 @@ otp_expiry = 3600
 # content_path = "./templates/password_changed_notification.html"
 
 [auth.sms]
-# Phone + OTP is the only login route for brokers. Signup stays disabled for the same reason
-# as above: pre-registration by the admin is what creates an account.
-enable_signup = false
+# Phone + OTP is the only login route for brokers (PLAN.md section 1).
+#
+# CAREFUL -- this key is misleadingly named. The CLI maps it to
+# GOTRUE_EXTERNAL_PHONE_ENABLED, so it is the master switch for whether phone auth EXISTS,
+# not a "may strangers sign up by SMS?" toggle. Setting it false disables the phone provider
+# outright: every /otp request is rejected with `phone_provider_disabled` ("Unsupported phone
+# provider") before the number is even looked at, and no broker can log in. It read as the
+# safe choice and was the one setting that made the product unusable.
+#
+# No public signup is enforced elsewhere, three times over, so nothing is lost by this being
+# true:
+#   1. [auth] enable_signup = false above  -> GOTRUE_DISABLE_SIGNUP=true, which is the actual
+#      control preventing GoTrue from creating a user that does not already exist.
+#   2. lib/auth/useAuth.tsx passes shouldCreateUser: false on signInWithOtp.
+#   3. app_private.link_auth_user_to_profile leaves an unrecognised number with no profile
+#      row, and therefore no data access, even if an auth user somehow appeared.
+enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = false
 # Template for sending OTP to users
@@ -295,10 +309,26 @@ max_frequency = "5s"
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+#
+# `enabled = true` here is what switches phone auth ON AT ALL. The CLI derives
+# GOTRUE_EXTERNAL_PHONE_ENABLED from whether any SMS provider is enabled; with every provider
+# false, GoTrue rejects every /otp request with `phone_provider_disabled` ("Unsupported phone
+# provider") before it ever looks at the number. [auth.sms.test_otp] does NOT imply this --
+# it only short-circuits *sending* for the numbers it lists. Phone + OTP is the only login
+# route for brokers (PLAN.md section 1), so with this false, nobody can log in locally.
+#
+# The credentials below are deliberate placeholders and are never used: every number in
+# [auth.sms.test_otp] is intercepted before the provider is called, and those are the only
+# numbers seeded locally. A number outside that list would attempt a real Twilio call and
+# fail, which is the correct behaviour for a local stack.
+#
+# BEFORE `supabase config push`: set real credentials via environment substitution and strip
+# [auth.sms.test_otp]. Pushing this block as-is gives a hosted project a phone provider that
+# cannot send, and pushing test_otp turns three hardcoded OTPs into live credentials.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
+enabled = true
+account_sid = "local-placeholder"
+message_service_sid = "local-placeholder"
 # DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
 auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 

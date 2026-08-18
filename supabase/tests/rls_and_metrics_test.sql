@@ -126,7 +126,15 @@ select is((select count(*) from public.profiles), 0::bigint,
   'a deactivated broker cannot even read the team directory');
 
 select pg_temp.become_anon();
-select is((select count(*) from public.leads), 0::bigint,
+-- `anon` holds no grant of any kind on public.leads -- only `authenticated` is granted DML
+-- there, and no migration grants anon anything. So the refusal happens at the privilege
+-- layer and never reaches RLS: the statement errors rather than returning zero rows.
+--
+-- That is strictly stronger than an RLS filter yielding an empty set (the table is
+-- unreachable, not merely empty), so this asserts the error. Asserting a count here would
+-- have required granting anon SELECT to make it pass -- opening a public read surface in
+-- order to test that no public read surface exists.
+select throws_ok($$ select count(*) from public.leads $$, '42501', null,
   'anon sees nothing: there is no public surface');
 
 -- ===========================================================================
